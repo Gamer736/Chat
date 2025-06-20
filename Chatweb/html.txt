@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Galaxy Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-image: url("https://images.unsplash.com/photo-1503264116251-35a269479413?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80");
+      background-size: cover;
+      background-position: center;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4">
+  <!-- Login -->
+  <div id="login" class="glass max-w-md w-full p-6 rounded-xl shadow-xl fade-in text-white">
+    <h2 class="text-2xl font-semibold mb-4 text-center">🪐 Willkommen im Chat</h2>
+    <input id="usernameInput" class="w-full p-2 rounded mb-4 text-black" placeholder="Dein Name..." />
+    <button id="startChat" class="w-full bg-white/20 hover:bg-white/30 text-white font-semibold p-2 rounded transition">Starten</button>
+  </div>
+
+  <!-- Chat -->
+  <div id="chatbox" class="hidden glass max-w-2xl w-full p-6 rounded-xl shadow-xl fade-in text-white">
+    <h1 class="text-2xl font-bold mb-4 text-center">💬 Chat</h1>
+    <div id="chat" class="h-80 overflow-y-auto border border-white/30 rounded p-4 mb-4 bg-white/10 text-sm space-y-2"></div>
+    <form id="form" class="flex gap-2">
+      <input id="input" placeholder="Nachricht..." class="flex-1 p-2 rounded text-black" />
+      <button class="bg-white/20 hover:bg-white/30 transition px-4 rounded text-white">Senden</button>
+    </form>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    const loginDiv = document.getElementById('login');
+    const chatDiv = document.getElementById('chatbox');
+    const usernameInput = document.getElementById('usernameInput');
+    const startButton = document.getElementById('startChat');
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+
+    let users = {};
+    let bannedUsers = new Set();
+    let admins = new Set(); // wird dynamisch befüllt
+    let username = '';
+
+    const ADMIN_NAME = 'ErikTheOwner';
+    const ADMIN_PASSWORD = 'SuperSecret123'; // <<< ÄNDERE das Passwort hier, wenn du willst
+
+    function appendMessage(msg, isAdmin = false) {
+      const div = document.createElement('div');
+      div.innerHTML = isAdmin
+        ? `<span class="text-yellow-300 font-bold">${msg}</span>`
+        : `<span class="text-white">${msg}</span>`;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    startButton.addEventListener('click', () => {
+      const name = usernameInput.value.trim();
+      if (!name) {
+        alert("❗ Bitte gib einen Namen ein!");
+        return;
+      }
+
+      if (name === ADMIN_NAME) {
+        const pw = prompt("🔒 Admin-Passwort eingeben:");
+        if (pw !== ADMIN_PASSWORD) {
+          alert("❌ Falsches Passwort! Anmeldung abgebrochen.");
+          return;
+        }
+        admins.add(ADMIN_NAME);
+      }
+
+      username = name;
+      users[username] = { name: username };
+
+      loginDiv.classList.add('hidden');
+      chatDiv.classList.remove('hidden');
+      appendMessage(`✅ Willkommen, ${username}`, true);
+    });
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      if (msg.startsWith('/ban ') && admins.has(username)) {
+        const target = msg.split(' ')[1];
+        bannedUsers.add(target);
+        appendMessage(`🚫 ${target} wurde gebannt`, true);
+        input.value = '';
+        return;
+      }
+
+      if (msg.startsWith('/makeadmin ') && admins.has(username)) {
+        const target = msg.split(' ')[1];
+        admins.add(target);
+        appendMessage(`👑 ${target} ist jetzt Admin`, true);
+        input.value = '';
+        return;
+      }
+
+      if (bannedUsers.has(username)) {
+        appendMessage(`❌ Du bist gebannt.`, true);
+      } else {
+        const isAdmin = admins.has(username);
+        appendMessage(`${isAdmin ? '👑 ' : ''}${username}: ${msg}`);
+      }
+
+      input.value = '';
+    });
+  </script>
+</body>
+</html>
